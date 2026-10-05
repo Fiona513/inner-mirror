@@ -1,5 +1,7 @@
 # Inner Mirror｜内在镜像
 
+[在线体验 / Live demo](https://inner-mirror-bilingual.azure-frost-7692.chatgpt.site/)
+
 Inner Mirror is a non-diagnostic self-reflection prototype. It keeps lived events, observations, candidate interpretations and user corrections distinct, so an understanding can be inspected and revised rather than treated as a fixed identity label.
 
 The current Living Self Model experience opens in Simplified Chinese and has a persistent 中文 / EN switch. The interface, built-in sample history and deterministic demo responses follow the selected language. User-authored text is not translated automatically.
