@@ -5,10 +5,10 @@ import type { AgentComponentType, AgentState } from "../../living-model/types";
 
 interface LivingReflectionRequest {
   input: string;
-  locale?: "zh-CN" | "en";
   context: "decision" | "feeling" | "repeating" | "explore";
   preferences: { tone: number; depth: number; practicalSuggestions: boolean };
   plan: AgentDecision;
+  locale: "zh-CN" | "en";
 }
 
 const STATES = new Set<AgentState>(["LISTEN", "CLARIFY", "STRUCTURE", "EXPLORE", "RESOLVE", "REFLECT", "COMPLETE"]);
@@ -34,11 +34,11 @@ function validRequest(value: unknown): value is LivingReflectionRequest {
   return typeof candidate.input === "string"
     && candidate.input.trim().length > 0
     && candidate.input.length <= 4000
-    && (candidate.locale === undefined || candidate.locale === "zh-CN" || candidate.locale === "en")
     && ["decision", "feeling", "repeating", "explore"].includes(candidate.context ?? "")
     && typeof candidate.preferences?.tone === "number"
     && typeof candidate.preferences.depth === "number"
     && typeof candidate.preferences.practicalSuggestions === "boolean"
+    && ["zh-CN", "en"].includes(candidate.locale ?? "")
     && validPlan(candidate.plan);
 }
 
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
         input: [
           {
             role: "system",
-            content: `You may only rephrase the response copy for one current reflection. Write the response in ${payload.locale === "zh-CN" ? "natural Simplified Chinese" : "English"}. The deterministic plan already owns state, component selection, retrieval, candidate eligibility, exclusions, and persistence. Do not change those decisions. Do not diagnose, profile, recommend a life decision, reveal chain-of-thought, or output HTML. Return only the approved JSON schema.`,
+            content: `You may only rephrase the response copy for one current reflection. The deterministic plan already owns state, component selection, retrieval, candidate eligibility, exclusions, and persistence. Do not change those decisions. Do not diagnose, profile, recommend a life decision, reveal chain-of-thought, or output HTML. Write the response exclusively in ${payload.locale === "zh-CN" ? "Simplified Chinese" : "English"}. Return only the approved JSON schema.`,
           },
           {
             role: "user",
@@ -101,6 +101,7 @@ export async function POST(request: Request) {
               persistence_action: payload.plan.trace.persistenceAction,
               supporting_source_ids: payload.plan.trace.retrievedSourceIds,
               preferences: payload.preferences,
+              locale: payload.locale,
             }),
           },
         ],

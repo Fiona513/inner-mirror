@@ -1,4 +1,5 @@
 import { createDemoState, createEmptyState } from "./demo-data.ts";
+import { validPrevious } from './continuity.ts';
 import type { AnalyticsEvent, Evidence, Insight, InsightVersion, JourneyEvent, LivingAction, LivingModelState, ReflectionSession } from "./types";
 
 export const LIVING_MODEL_STORAGE_KEY = "inner-mirror-living-model-v1";
@@ -75,6 +76,10 @@ function materializeCandidate(state: LivingModelState, session: ReflectionSessio
 
 export function livingModelReducer(state: LivingModelState, action: LivingAction): LivingModelState {
   switch (action.type) {
+    case 'SET_RETURN_NOTE': {
+      if (state.memoryPaused) return state;
+      return { ...state, sessions: state.sessions.map(item => item.id === action.sessionId && item.previousSessionId && item.outcome !== 'safety' ? { ...item, returnNote: action.note.trim().slice(0, 2000), updatedAt: action.now } : item) };
+    }
     case "HYDRATE":
       return action.state;
     case "SET_MODE":
@@ -83,7 +88,7 @@ export function livingModelReducer(state: LivingModelState, action: LivingAction
       return { ...state, agentRuntimeStatus: action.status, agentStatusCheckedAt: action.checkedAt };
     case "COMPLETE_ONBOARDING": {
       const now = new Date().toISOString();
-      const base = action.demoChoice === "sample" ? createDemoState() : createEmptyState();
+      const base = action.demoChoice === "sample" ? createDemoState(action.locale) : createEmptyState();
       return {
         ...base,
         mode: state.mode,
@@ -94,8 +99,9 @@ export function livingModelReducer(state: LivingModelState, action: LivingAction
       };
     }
     case "START_REFLECTION": {
+      const linkedSession = { ...action.session, previousSessionId: validPrevious(state, action.session) };
       const currentEvidence: Evidence = { id: `evidence-${action.session.id}-current`, sourceType: "reflection", sourceId: action.session.id, excerpt: action.session.input, relationship: "supporting", context: `${action.session.context} · current reflection`, createdAt: action.session.createdAt };
-      return { ...state, sessions: [action.session, ...state.sessions], evidence: [currentEvidence, ...state.evidence], analytics: [...state.analytics, event("reflection_started", action.session.createdAt, { context: action.session.context })] };
+      return { ...state, sessions: [linkedSession, ...state.sessions], evidence: [currentEvidence, ...state.evidence], analytics: [...state.analytics, event("reflection_started", action.session.createdAt, { context: action.session.context })] };
     }
     case "UPDATE_SESSION":
       return { ...state, sessions: state.sessions.map((item) => item.id === action.sessionId ? { ...item, ...action.patch } : item) };
@@ -184,7 +190,7 @@ export function livingModelReducer(state: LivingModelState, action: LivingAction
       return { ...state, directions: state.directions.map((item) => item.id === action.directionId ? { ...item, status: action.status, updatedAt: action.now } : item), journey: [{ id: `journey-direction-${direction.id}-${action.now}`, type: "direction_changed", title: "A direction changed", summary: `“${direction.statement}” is now marked ${action.status.replaceAll("_", " ")}.`, createdAt: action.now, changedBy: "user" }, ...state.journey] };
     }
     case "RESET_DEMO":
-      return createDemoState();
+      return createDemoState(action.locale);
     default:
       return state;
   }

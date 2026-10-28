@@ -124,6 +124,8 @@ export interface ToolData {
 }
 
 export interface ReflectionSession {
+  previousSessionId?: string;
+  returnNote?: string;
   id: string;
   input: string;
   context: ReflectionContext;
@@ -221,10 +223,11 @@ export interface LivingModelState {
 }
 
 export type LivingAction =
+  | { type: "SET_RETURN_NOTE"; sessionId: string; note: string; now: string }
   | { type: "HYDRATE"; state: LivingModelState }
   | { type: "SET_MODE"; mode: LivingModelState["mode"] }
   | { type: "SET_AGENT_RUNTIME_STATUS"; status: AgentRuntimeStatus; checkedAt: string }
-  | { type: "COMPLETE_ONBOARDING"; reasons: string[]; preferences: CommunicationPreferences; demoChoice: "empty" | "sample" }
+  | { type: "COMPLETE_ONBOARDING"; reasons: string[]; preferences: CommunicationPreferences; demoChoice: "empty" | "sample"; locale?: "zh-CN" | "en" }
   | { type: "START_REFLECTION"; session: ReflectionSession }
   | { type: "UPDATE_SESSION"; sessionId: string; patch: Partial<ReflectionSession> }
   | { type: "UPSERT_STATE_SNAPSHOTS"; sessionId: string; snapshots: StateSnapshot[] }
@@ -244,4 +247,4 @@ export type LivingAction =
   | { type: "TOGGLE_MEMORY"; paused: boolean }
   | { type: "UPDATE_PREFERENCES"; preferences: CommunicationPreferences }
   | { type: "UPDATE_DIRECTION"; directionId: string; status: Direction["status"]; now: string }
-  | { type: "RESET_DEMO" };
+  | { type: "RESET_DEMO"; locale?: "zh-CN" | "en" };

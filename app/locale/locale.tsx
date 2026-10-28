@@ -52,6 +52,8 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const resolved = readStoredLocale() ?? defaultLocale();
+    // SSR must start from a deterministic locale; hydrate the explicit browser choice once mounted.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLocale(resolved);
     document.documentElement.lang = DOCUMENT_LANG[resolved];
   }, []);
@@ -94,12 +96,6 @@ export function useLocale(): LocaleContextValue {
 /** Convenience hook exposing only the translate function. */
 export function useT(): (key: MessageKey) => string {
   return useLocale().t;
-}
-
-/** Keep short interface copy in sync with the selected language. */
-export function useCopy(): (chinese: string, english: string) => string {
-  const { locale } = useLocale();
-  return useCallback((chinese: string, english: string) => locale === "zh-CN" ? chinese : english, [locale]);
 }
 
 export { LOCALE_STORAGE_KEY };

@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import { createReflectionSession, hasImmediateSafetyRisk, orchestrateAgentStep, retrieveRelevantContext, structuredFallback, validateAgentDecision, validateStructuredAgentOutput } from "../app/living-model/agent.ts";
-import { createDemoState, createEmptyState } from "../app/living-model/demo-data.ts";
+import { createDemoState, createEmptyState, localizeDemoText } from "../app/living-model/demo-data.ts";
 import { sortJourneyNewestFirst } from "../app/living-model/journey.ts";
 import { searchLivingModel } from "../app/living-model/search.ts";
 import { livingModelReducer, loadLivingState } from "../app/living-model/store.ts";
@@ -222,10 +222,13 @@ test("Onboarding starts with no goals and explicitly chooses empty or sample own
   assert.equal(empty.insights.length, 0);
   assert.equal(sample.sampleDataLoaded, true);
   assert.equal(sample.hasPersonalUnderstanding, false);
-  const onboarding = await readFile(new URL("../app/living-model/OnboardingFlow.tsx", import.meta.url), "utf8");
-  const messages = await readFile(new URL("../app/locale/messages.ts", import.meta.url), "utf8");
+  const [onboarding, messages] = await Promise.all([
+    readFile(new URL("../app/living-model/OnboardingFlow.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/locale/messages.ts", import.meta.url), "utf8"),
+  ]);
   assert.match(onboarding, /useState<string\[]>\(\[\]\)/);
   for (const copy of ["Start empty", "Load sample mirror", "Sample person", "Example history"]) assert.ok(messages.includes(copy));
+  assert.match(onboarding, /demoChoice, locale/);
 });
 
 test("first accepted understanding unlocks personal ownership copy without erasing sample labelling", () => {
@@ -253,11 +256,13 @@ test("Real API status is explicit and Demo fallback is never presented as connec
   state = livingModelReducer(state, { type: "SET_AGENT_RUNTIME_STATUS", status: "falling_back", checkedAt: stamp });
   assert.equal(state.agentRuntimeStatus, "falling_back");
   assert.equal(state.agentStatusCheckedAt, stamp);
-  const [settings, shell] = await Promise.all([
+  const [settings, shell, localeCopy] = await Promise.all([
     readFile(new URL("../app/living-model/CommunicationSettingsPage.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/living-model/LivingShell.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/locale/living.ts", import.meta.url), "utf8"),
   ]);
-  for (const label of ["Connected", "Falling back", "Unavailable", "Demo fallback"]) assert.ok(settings.includes(label));
+  for (const label of ["Connected", "Falling back", "Unavailable", "Demo fallback"]) assert.ok(localeCopy.includes(label));
+  assert.match(settings, /copy\.settings\.(connected|fallingBack|unavailable)/);
   assert.ok(shell.includes('t("shell.demoFallback")'));
 });
 
@@ -270,9 +275,13 @@ test("Agent clarification changes with context and an under-evidenced feeling ne
 });
 
 test("Agent Trace is acceptance-gated and exposes the complete structured orchestration trace", async () => {
-  const reflection = await readFile(new URL("../app/living-model/ReflectionPage.tsx", import.meta.url), "utf8");
+  const [reflection, localeCopy] = await Promise.all([
+    readFile(new URL("../app/living-model/ReflectionPage.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/locale/living.ts", import.meta.url), "utf8"),
+  ]);
   assert.match(reflection, /NODE_ENV !== "production" \|\| params\.get\("trace"\) === "1"/);
-  for (const label of ["Current state", "Selected component", "Retrieved source IDs", "Excluded rejected IDs", "Excluded archived IDs", "Schema validation", "Persistence action"]) assert.ok(reflection.includes(label));
+  for (const label of ["Current state", "Selected component", "Retrieved source IDs", "Excluded rejected IDs", "Excluded archived IDs", "Schema validation", "Persistence action"]) assert.ok(localeCopy.includes(label));
+  assert.match(reflection, /copy\.reflection\.(currentState|component|retrieved|rejectedIds|archivedIds|validation|persistence)/);
 });
 
 test("state snapshots are optional, user-authored, contextual, editable and removable", () => {
@@ -318,16 +327,18 @@ test("sample person owns sample snapshots while an empty mirror starts without i
 });
 
 test("Now, Mirror and Journey expose visual evidence through progressive, linked views without scores", async () => {
-  const [now, mirror, journey, capture] = await Promise.all([
+  const [now, mirror, journey, capture, localeCopy] = await Promise.all([
     readFile(new URL("../app/living-model/NowPage.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/living-model/MirrorPage.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/living-model/JourneyPage.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/living-model/StateSnapshotCapture.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/locale/living.ts", import.meta.url), "utf8"),
   ]);
   for (const phrase of ["Current state", "One snapshot · No trend yet", "Self-reported"]) assert.ok(now.includes(phrase));
   for (const phrase of ["Evidence balance", "Supporting", "Counter-signals", "How this formed"]) assert.ok(mirror.includes(phrase));
   for (const phrase of ["Self-reported state", "Understanding revision", "Open evidence"]) assert.ok(journey.includes(phrase));
-  for (const phrase of ["How does this feel right now?", "Save snapshot", "Skip", "Edit", "Remove snapshot"]) assert.ok(capture.includes(phrase));
+  for (const phrase of ["How does this feel right now?", "Save snapshot", "Skip", "Edit", "Remove snapshot"]) assert.ok(localeCopy.includes(phrase));
+  assert.match(capture, /copy\.snapshot\.(title|save|skip|edit|remove)/);
   assert.doesNotMatch(`${now}${mirror}${journey}`, /confidence|accuracy|growth score|% change/i);
 });
 
@@ -358,17 +369,50 @@ test("corrupt local state falls back to complete demo data", () => {
 });
 
 test("routes and UI implement the requested IA without turning root or V4 into the new product", async () => {
-  const [shell, reflection, mirror, memory, root] = await Promise.all([
+  const [shell, reflection, mirror, memory, root, messages, localeCopy] = await Promise.all([
     readFile(new URL("../app/living-model/LivingShell.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/living-model/ReflectionPage.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/living-model/MirrorPage.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/living-model/MemoryPrivacyPage.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/locale/messages.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/locale/living.ts", import.meta.url), "utf8"),
   ]);
-  const messages = await readFile(new URL("../app/locale/messages.ts", import.meta.url), "utf8");
   for (const label of ["Now", "Mirror", "Journey", "New Reflection", "Search", "Memory & Privacy", "Settings"]) assert.ok(messages.includes(label));
-  for (const action of ["This fits", "Only in some situations", "Not quite", "Rewrite", "I don\\u0027t agree", "Show me why"]) assert.ok(reflection.includes(action));
-  for (const detail of ["Current understanding", "Seems true when", "Seems less true when", "View evidence", "This isn\\u0027t me anymore"]) assert.ok(mirror.includes(detail));
-  for (const layer of ["Facts", "Observations", "Interpretations", "Rejected interpretations"]) assert.ok(memory.includes(layer));
+  for (const action of ["This fits", "Only in some situations", "Not quite", "Rewrite", "I don't agree", "Show me why"]) assert.ok(localeCopy.includes(action));
+  for (const detail of ["Current understanding", "Seems true when", "Seems less true when", "View evidence", "This isn't me anymore"]) assert.ok(mirror.includes(detail));
+  for (const layer of ["Facts", "Observations", "Interpretations", "Rejected interpretations"]) assert.ok(localeCopy.includes(layer));
+  assert.match(shell, /labelKey: "nav\.(now|mirror|journey)"/);
+  assert.match(reflection, /copy\.reflection/);
+  assert.match(memory, /copy\.privacy/);
   assert.match(root, /InnerMirrorPhase1|redirect\("\/onboarding"\)/);
+});
+
+test("language choice produces exclusive localized system and sample content", () => {
+  const zh = createDemoState("zh-CN");
+  const en = createDemoState("en");
+  assert.equal(zh.insights[0].title, "判断与认可");
+  assert.equal(zh.facts[0].context, "职业");
+  assert.match(zh.journey[0].title, /镜像|理解|情境|变化/);
+  assert.equal(en.insights[0].title, "Judgement and validation");
+  assert.equal(en.facts[0].context, "Career");
+  assert.equal(localizeDemoText(zh.insights[0].title, "en"), "Judgement and validation");
+  assert.equal(searchLivingModel(en, "判断与认可", (value) => localizeDemoText(value, "zh-CN"))[0]?.id, "insight-judgement");
+
+  const zhSession = createReflectionSession("我正在考虑一个重要决定。", "decision", zh, "zh-session", stamp, "zh-CN");
+  const enSession = createReflectionSession("I am considering an important choice.", "decision", en, "en-session", stamp, "en");
+  assert.match(zhSession.structure.expectation, /他人|期待/);
+  assert.match(zhSession.toolData.leftLabel, /方向|属于/);
+  assert.match(zhSession.nextStep, /可逆|尝试/);
+  assert.match(enSession.structure.expectation, /Other people's needs/);
+  assert.match(enSession.toolData.leftLabel, /What feels like mine/);
+});
+
+test("the controlled Agent endpoint receives and enforces the selected response language", async () => {
+  const endpoint = await readFile(new URL("../app/api/living-reflection/route.ts", import.meta.url), "utf8");
+  const reflection = await readFile(new URL("../app/living-model/ReflectionPage.tsx", import.meta.url), "utf8");
+  assert.match(reflection, /JSON\.stringify\(\{[^}]*locale/s);
+  assert.match(endpoint, /\["zh-CN", "en"\]/);
+  assert.match(endpoint, /Simplified Chinese/);
+  assert.match(endpoint, /exclusively/);
 });

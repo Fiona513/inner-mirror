@@ -8,10 +8,10 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     metadataBase: new URL(trustedSiteOrigin),
     title: "Inner Mirror｜内在镜像",
-    description: "不同选择会改变问题路径、当前理解与一张可由你修正的 Current Inner Map。",
+    description: "围绕一件仍悬着的事，让新的线索真实改变当前理解。",
     openGraph: {
       title: "Inner Mirror｜内在镜像",
-      description: "轻量扫描、真实分支与用户纠正，逐渐形成只属于这一次的 Inner Map。",
+      description: "从一个具体的现实处境开始，不急着下结论，慢慢靠近那件仍悬着的事。",
       type: "website",
       url: "/",
       images: [{ url: "/og.png", width: 1910, height: 1000, alt: "Inner Mirror 内在镜像" }],
@@ -19,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
     twitter: {
       card: "summary_large_image",
       title: "Inner Mirror｜内在镜像",
-      description: "轻量扫描、真实分支与用户纠正，逐渐形成只属于这一次的 Inner Map。",
+      description: "从一个具体的现实处境开始，不急着下结论，慢慢靠近那件仍悬着的事。",
       images: ["/og.png"],
     },
   };

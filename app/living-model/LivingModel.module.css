@@ -114,7 +114,6 @@
 .localeButton:hover { color: var(--lm-ink); }
 .localeButtonActive, .localeButtonActive:hover { background: var(--lm-ink); color: #fafaf7; }
 .localeButton:focus-visible { outline: 2px solid var(--lm-accent); outline-offset: 2px; }
-.shellLocale { align-self: flex-start; margin-top: 24px; }
 .onboardingBody { width: min(1280px, 100%); min-height: calc(100dvh - 82px); margin: 0 auto; display: grid; grid-template-columns: minmax(0, .9fr) minmax(400px, 1.1fr); align-items: center; gap: clamp(70px, 10vw, 160px); }
 .onboardingCopy { max-width: 590px; padding: 62px 0 90px; }
 .onboardingCopy h1 { margin: 0; max-width: 580px; font-size: clamp(46px, 5vw, 74px); line-height: .99; font-weight: 500; letter-spacing: -.065em; text-wrap: balance; }
@@ -519,7 +518,6 @@
   .navLink { min-height: 36px; padding-inline: 7px; border-left: 0; border-bottom: 1px solid transparent; }
   .navActive { border-bottom-color: var(--lm-accent); }
   .navDivider, .sidebarMeta, .navSecondary { display: none; }
-  .shellLocale { align-self: center; flex: 0 0 auto; margin-top: 0; }
   .page { width: min(100% - 40px, 800px); padding-top: 31px; }
   .nowGrid { grid-template-columns: 1fr; }
   .nowRail { grid-template-columns: repeat(2, minmax(0, 1fr)); }

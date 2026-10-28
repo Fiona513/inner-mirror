@@ -1,26 +1,29 @@
 import type { LivingModelState, ReflectionSession, StateMetricKey, StateSnapshot } from "./types";
+import type { Locale } from "../locale/messages";
 
 export const STATE_METRICS: Record<StateMetricKey, { label: string; low: string; high: string }> = {
   pressure: { label: "Pressure", low: "Low", high: "High" },
   clarity: { label: "Clarity", low: "Unclear", high: "Clear" },
 };
 
-export function createStateSnapshot(session: ReflectionSession, metricKey: StateMetricKey, value: 1 | 2 | 3 | 4 | 5, capturedAt: string): StateSnapshot {
+export function createStateSnapshot(session: ReflectionSession, metricKey: StateMetricKey, value: 1 | 2 | 3 | 4 | 5, capturedAt: string, locale: Locale = "en"): StateSnapshot {
   return {
     id: `snapshot-${session.id}-${metricKey}`,
     sessionId: session.id,
     metricKey,
-    label: STATE_METRICS[metricKey].label,
+    label: locale === "zh-CN" ? (metricKey === "pressure" ? "压力" : "清晰度") : STATE_METRICS[metricKey].label,
     value,
     source: "user_self_report",
-    context: contextLabel(session),
+    context: contextLabel(session, locale),
     contextKey: session.context,
     capturedAt,
   };
 }
 
-export function contextLabel(session: ReflectionSession): string {
-  const prefix = session.context === "decision" ? "Decision" : session.context === "feeling" ? "Current feeling" : session.context === "repeating" ? "Recurring situation" : "Open reflection";
+export function contextLabel(session: ReflectionSession, locale: Locale = "en"): string {
+  const prefix = locale === "zh-CN"
+    ? session.context === "decision" ? "决定" : session.context === "feeling" ? "当前感受" : session.context === "repeating" ? "反复出现的处境" : "开放反思"
+    : session.context === "decision" ? "Decision" : session.context === "feeling" ? "Current feeling" : session.context === "repeating" ? "Recurring situation" : "Open reflection";
   const excerpt = session.input.trim().replace(/\s+/g, " ").slice(0, 48);
   return excerpt ? `${prefix} · ${excerpt}${session.input.trim().length > 48 ? "…" : ""}` : prefix;
 }
@@ -52,12 +55,7 @@ export function getSnapshotMoments(state: LivingModelState, limit = 4) {
   return [...moments.values()].sort((a, b) => Date.parse(a.capturedAt) - Date.parse(b.capturedAt)).slice(-limit);
 }
 
-export function describeStateChange(metricKey: StateMetricKey, previous: number, current: number, locale = "en"): string {
-  if (locale === "zh-CN") {
-    const label = metricKey === "pressure" ? "压力" : "清晰度";
-    if (previous === current) return `最近两次自报的${label}处于同一水平。`;
-    return `最近一次自报的${label}${current > previous ? "更高" : "更低"}。`;
-  }
+export function describeStateChange(metricKey: StateMetricKey, previous: number, current: number): string {
   if (previous === current) return `${STATE_METRICS[metricKey].label} stayed at the same self-reported level.`;
   const direction = current > previous ? "higher" : "lower";
   return `${STATE_METRICS[metricKey].label} is ${direction} in the latest self-report.`;

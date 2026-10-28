@@ -33,7 +33,7 @@ export default function OnboardingFlow() {
   const [practical, setPractical] = useState(state.preferences.practicalSuggestions);
 
   function finish(demoChoice: "empty" | "sample") {
-    const action = { type: "COMPLETE_ONBOARDING", reasons: selected, preferences: { ...state.preferences, tone, depth, practicalSuggestions: practical }, demoChoice } as const;
+    const action = { type: "COMPLETE_ONBOARDING", reasons: selected, preferences: { ...state.preferences, tone, depth, practicalSuggestions: practical }, demoChoice, locale } as const;
     window.localStorage.setItem(LIVING_MODEL_STORAGE_KEY, JSON.stringify(livingModelReducer(state, action)));
     dispatch(action);
     window.location.assign("/now");
@@ -42,12 +42,12 @@ export default function OnboardingFlow() {
   return (
     <main className={`${styles.app} ${styles.onboarding}`} data-locale={locale}>
       <a className={styles.skipLink} href="#onboarding-content">{t("nav.skipToContent")}</a>
-      <header className={styles.onboardingHeader}><span className={styles.mark} aria-hidden="true" /><span>INNER MIRROR</span>
+      <header className={styles.onboardingHeader}><span className={styles.mark} aria-hidden="true" /><span>{isZh ? t("brand.name") : t("brand.wordmark")}</span>
         <div className={styles.onboardingHeaderRight}>
           <small>{String(screen + 1).padStart(2, "0")} / 05</small>
           <div className={styles.localeSwitch} role="group" aria-label={t("locale.label")}>
             <button type="button" className={`${styles.localeButton} ${isZh ? styles.localeButtonActive : ""}`} aria-pressed={isZh} onClick={() => setLocale("zh-CN")}>中文</button>
-            <button type="button" className={`${styles.localeButton} ${!isZh ? styles.localeButtonActive : ""}`} aria-pressed={!isZh} onClick={() => setLocale("en")}>EN</button>
+            <button type="button" className={`${styles.localeButton} ${!isZh ? styles.localeButtonActive : ""}`} aria-pressed={!isZh} onClick={() => setLocale("en")}>English</button>
           </div>
         </div>
       </header>

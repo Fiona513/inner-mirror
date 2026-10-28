@@ -1,4 +1,5 @@
 import type { AgentComponentType, AgentState, AgentTraceEntry, CandidateUnderstanding, Evidence, LivingModelState, ReflectionContext, ReflectionSession, ReflectionStructure, ReflectionTool, ToolData } from "./types";
+import type { Locale } from "../locale/messages";
 
 const CRISIS_PATTERNS = ["kill myself", "suicide", "end my life", "hurt myself", "自杀", "轻生", "伤害自己", "不想活"];
 const SENSITIVE_IDENTITY_PATTERNS = ["diagnosis", "bipolar", "adhd", "depression", "性取向", "宗教", "政治立场", "种族"];
@@ -17,8 +18,17 @@ export function createId(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
-function getStructure(input: string, context: ReflectionContext): ReflectionStructure {
+function getStructure(input: string, context: ReflectionContext, locale: Locale = "en"): ReflectionStructure {
   const trimmed = input.trim();
+  if (locale === "zh-CN") {
+    const map: Record<ReflectionContext, ReflectionStructure> = {
+      decision: { reality: trimmed || "眼前有一个真实的决定，无论往哪边走都需要放下一些东西。", expectation: "他人的需要或期待可能在场，但它们并不是这个决定的全部。", selfDoubt: "我还分不清，哪些担心属于处境本身，哪些正在让我怀疑自己的判断。" },
+      feeling: { reality: trimmed || "事情已经发生，但这份感受还没有平静下来。", expectation: "我似乎已经在照顾这份感受会怎样影响别人。", selfDoubt: "我还不确定，能不能相信这份感受正在提出的需要。" },
+      repeating: { reality: trimmed || "相似的拉扯已经不止一次出现。", expectation: "我可能在用一种最不打扰别人的方式处理它。", selfDoubt: "我还不确定，反复出现的究竟是处境、我的回应，还是我赋予它的含义。" },
+      explore: { reality: trimmed || "有些东西正占据着注意力，即使我还说不清它的形状。", expectation: "现在还不需要为了任何人把它讲得完整。", selfDoubt: "暂时不知道它意味着什么，也可以成为反思的一部分。" },
+    };
+    return map[context];
+  }
   const map: Record<ReflectionContext, ReflectionStructure> = {
     decision: {
       reality: trimmed || "There is a real decision in front of me, and neither direction is cost-free.",
@@ -51,7 +61,21 @@ function getTool(context: ReflectionContext, input = ""): ReflectionTool {
   return "perspective_split";
 }
 
-function getToolData(context: ReflectionContext): ToolData {
+function getToolData(context: ReflectionContext, locale: Locale = "en"): ToolData {
+  if (locale === "zh-CN") return {
+    tensionPosition: 50,
+    leftLabel: context === "decision" ? "属于我的方向" : "我能说清的部分",
+    rightLabel: context === "decision" ? "让我感到安心的部分" : "我正在照顾的部分",
+    leftContext: "当我有足够空间去试一试自己真正偏向什么。",
+    rightContext: "当后果会影响我在意的人或承诺。",
+    difference: "这一次的拉扯，可能不只在选项之间，也在于由谁来定义一个理由是否足够成立。",
+    think: "我应该先把它解释清楚，再采取行动。",
+    feel: "被几个方向同时拉住。",
+    fear: "如果直接说出来，会引发一个我无法处理的反应。",
+    want: "在决定如何行动之前，先分清什么真正属于我。",
+    unsaid: "",
+    keepUnsaidPrivate: true,
+  };
   return {
     tensionPosition: 50,
     leftLabel: context === "decision" ? "What feels like mine" : "What I can name",
@@ -68,7 +92,13 @@ function getToolData(context: ReflectionContext): ToolData {
   };
 }
 
-export function buildCandidate(context: ReflectionContext, evidence: Evidence[]): CandidateUnderstanding {
+export function buildCandidate(context: ReflectionContext, evidence: Evidence[], locale: Locale = "en"): CandidateUnderstanding {
+  const zhContext: Record<ReflectionContext, Pick<CandidateUnderstanding, "category" | "title" | "statement" | "appliesWhen" | "doesNotApplyWhen">> = {
+    decision: { category: "tensions", title: "偏好与允许", statement: "当自己的偏好和一份重要期待拉开时，你可能会先判断自己的偏好是否足够成立，而不是先听听它需要什么。", appliesWhen: ["这个选择会影响一位你很看重其判断的人"], doesNotApplyWhen: ["你可以先尝试，而不需要立刻获得认可"] },
+    feeling: { category: "patterns", title: "感受与反应", statement: "当说出一份感受可能改变重要关系时，你可能会在理解自己的经历之前，先开始照顾对方的反应。", appliesWhen: ["这段关系很重要，而对方的反应难以预测"], doesNotApplyWhen: ["这段关系可以承受分歧，而不需要立刻修复"] },
+    repeating: { category: "patterns", title: "先解释，再偏好", statement: "在反复出现、又很重要的处境里，你可能会先寻找一个足够能被解释的理由，再让自己的偏好获得同等重量。", appliesWhen: ["这个决定会被你很看重其判断的人看见"], doesNotApplyWhen: ["你已有直接经验，也有空间继续修改"] },
+    explore: { category: "what_i_need", title: "先留空间，再赋予含义", statement: "当一件事仍不清楚时，先把它留在私人空间里片刻，可能会帮助你在解释之前，注意到什么更真实。", appliesWhen: ["这份经历很新，或还没准备好分享"], doesNotApplyWhen: ["保持私密逐渐变成了回避你其实想要的支持"] },
+  };
   const byContext: Record<ReflectionContext, Pick<CandidateUnderstanding, "category" | "title" | "statement" | "appliesWhen" | "doesNotApplyWhen">> = {
     decision: {
       category: "tensions",
@@ -99,7 +129,7 @@ export function buildCandidate(context: ReflectionContext, evidence: Evidence[])
       doesNotApplyWhen: ["Privacy turns into avoiding support you actually want"],
     },
   };
-  const selected = byContext[context];
+  const selected = locale === "zh-CN" ? zhContext[context] : byContext[context];
   const supporting = evidence.filter((item) => item.relationship === "supporting").slice(0, 3).map((item) => item.id);
   const counter = evidence.filter((item) => item.relationship === "counter_signal").slice(0, 2).map((item) => item.id);
   return {
@@ -111,11 +141,11 @@ export function buildCandidate(context: ReflectionContext, evidence: Evidence[])
   };
 }
 
-export function createReflectionSession(input: string, context: ReflectionContext, state: LivingModelState, id = createId("reflection"), now = new Date().toISOString()): ReflectionSession {
+export function createReflectionSession(input: string, context: ReflectionContext, state: LivingModelState, id = createId("reflection"), now = new Date().toISOString(), locale: Locale = "en"): ReflectionSession {
   const relevant = retrieveRelevantContext(state, input, context);
   const historicalSupport = relevant.evidence.filter((item) => item.relationship === "supporting");
   const explicitCounter = hasExplicitCounterexample(input);
-  const candidate = historicalSupport.length ? buildCandidate(context, relevant.evidence) : undefined;
+  const candidate = historicalSupport.length ? buildCandidate(context, relevant.evidence, locale) : undefined;
   if (candidate) {
     candidate.supportingEvidenceIds = [`evidence-${id}-current`, ...candidate.supportingEvidenceIds].slice(0, 3);
     if (explicitCounter) narrowCandidateForCounterexample(candidate, input, historicalSupport.length);
@@ -125,10 +155,12 @@ export function createReflectionSession(input: string, context: ReflectionContex
     input: input.trim(),
     context,
     state: hasImmediateSafetyRisk(input) ? "COMPLETE" : "LISTEN",
-    structure: getStructure(input, context),
+    structure: getStructure(input, context, locale),
     tool: getTool(context, input),
-    toolData: getToolData(context),
-    nextStep: context === "decision" ? "Name one small test that gives you information without pretending the whole decision is final." : "Write one sentence that is true before making it useful to anyone else.",
+    toolData: getToolData(context, locale),
+    nextStep: locale === "zh-CN"
+      ? context === "decision" ? "找一个可逆的小尝试，让它提供信息，而不是假装整个决定已经结束。" : "先写下一句真实的话，不必急着让它对任何人有用。"
+      : context === "decision" ? "Name one small test that gives you information without pretending the whole decision is final." : "Write one sentence that is true before making it useful to anyone else.",
     candidate,
     agentTrace: [],
     outcome: hasImmediateSafetyRisk(input) ? "safety" : undefined,
@@ -219,7 +251,7 @@ function componentFor(session: ReflectionSession, nextState: AgentState): AgentC
   return session.tool;
 }
 
-export function orchestrateAgentStep(state: LivingModelState, session: ReflectionSession, nextState: AgentState): AgentDecision {
+export function orchestrateAgentStep(state: LivingModelState, session: ReflectionSession, nextState: AgentState, locale: Locale = "en"): AgentDecision {
   const retrieved = retrieveRelevantContext(state, session.input, session.context);
   const selectedComponentType = componentFor(session, nextState);
   const historicalSupport = retrieved.evidence.filter((item) => item.relationship === "supporting");
@@ -228,7 +260,7 @@ export function orchestrateAgentStep(state: LivingModelState, session: Reflectio
   if (nextState === "REFLECT") {
     if (!historicalSupport.length) candidate = null;
     else if (!candidate) {
-      candidate = buildCandidate(session.context, retrieved.evidence);
+      candidate = buildCandidate(session.context, retrieved.evidence, locale);
       candidate.supportingEvidenceIds = [`evidence-${session.id}-current`, ...candidate.supportingEvidenceIds].slice(0, 3);
     }
     if (candidate && hasExplicitCounterexample(session.input)) narrowCandidateForCounterexample(candidate, session.input, historicalSupport.length);
@@ -254,9 +286,9 @@ export function orchestrateAgentStep(state: LivingModelState, session: Reflectio
   return {
     current_state: session.state,
     next_state: nextState,
-    response: nextState === "REFLECT" && !candidate
-      ? "There is not enough independent evidence to add a self-understanding. The current reflection can still be complete."
-      : "Stay with the current situation and use this canvas only as a revisable working view.",
+    response: locale === "zh-CN"
+      ? nextState === "REFLECT" && !candidate ? "目前没有足够的独立证据加入一条自我理解，这次反思仍然可以完整结束。" : "先和眼前的处境待在一起，只把这张画布当作可以修改的工作视图。"
+      : nextState === "REFLECT" && !candidate ? "There is not enough independent evidence to add a self-understanding. The current reflection can still be complete." : "Stay with the current situation and use this canvas only as a revisable working view.",
     ui: { type: trace.selectedComponentType, data },
     candidate_insight: nextState === "REFLECT" ? candidate : null,
     safety: { state: hasImmediateSafetyRisk(session.input) ? "high_risk" : "normal" },

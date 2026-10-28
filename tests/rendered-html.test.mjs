@@ -9,15 +9,13 @@ async function render(path = "/") {
   return worker.fetch(new Request(`http://localhost${path}`, { headers: { accept: "text/html" } }), { ASSETS: { fetch: async () => new Response("Not found", { status: 404 }) } }, { waitUntil() {}, passThroughOnException() {} });
 }
 
-test("server renders the Phase 1 promise and real first action", async () => {
+test("the root route redirects to the Living Model onboarding entry", async () => {
   const response = await render();
-  assert.equal(response.status, 200);
-  const html = await response.text();
-  assert.match(html, /<title>Inner Mirror｜内在镜像<\/title>/i);
-  assert.match(html, /让选择/);
-  assert.match(html, /开始探索/);
-  assert.match(html, /不是心理测试/);
-  assert.doesNotMatch(html, /codex-preview|react-loading-skeleton|Self \d+%/i);
+  const status = response.status;
+  assert.equal(status >= 300 && status < 400, true, `expected a redirect status, got ${status}`);
+  const location = response.headers.get("location");
+  assert.equal(Boolean(location && (location === "/onboarding" || location.endsWith("/onboarding"))), true, `expected redirect location /onboarding, got ${location}`);
+  assert.doesNotMatch(await response.text(), /codex-preview|react-loading-skeleton|Self \d+%/i);
 });
 
 test("the visible Phase 1 flow has restart, legal boundaries, skip navigation and no Phase 2 interaction", async () => {
@@ -61,16 +59,22 @@ test("visible copy avoids diagnosis, certainty percentages and anthropomorphic c
   assert.doesNotMatch(source, /supportScore.*%|confidence.*%/i);
 });
 
-test("the isolated V4 Core route renders the opening prelude before the selector without changing root", async () => {
+test("the V4 Core route renders the low-friction value-first landing", async () => {
   const response = await render("/v4-core");
   assert.equal(response.status, 200);
   const html = await response.text();
-  const source = await readFile(new URL("../app/v4-core/V4CoreJourney.tsx", import.meta.url), "utf8");
-  assert.match(html, /先不用急着回答/);
-  assert.match(html, /慢慢开始/);
-  assert.doesNotMatch(html, /这一次，哪一种更接近你正在经历的/);
-  assert.match(source, /这一次，哪一种更接近你正在经历的/);
-  assert.match(source, /这两种都不贴近/);
-  assert.doesNotMatch(source, /最近，什么一直占着你的注意力|一个重要事情/);
+  const source = await readFile(new URL("../app/v4-core/experience/V4CoreExperience.tsx", import.meta.url), "utf8");
+  assert.match(html, /看看最近的你，正在发生什么/);
+  assert.match(html, /不用一次说清自己。从今天的一个状态开始/);
+  assert.match(html, /看看今天的我/);
+  assert.match(html, /我只是随便看看/);
+  assert.match(html, /没有标准答案，不给你贴标签，也不是心理测试/);
+  assert.match(html, /隐私说明/);
+  assert.match(html, /使用边界/);
+  assert.match(source, /今天，你为什么来到这里/);
+  assert.match(source, /为什么出现这个/);
+  assert.match(source, /今天先到这里/);
+  assert.doesNotMatch(html, /让选择，|几个轻量选择会逐步改变系统接下来的提问/);
+  assert.doesNotMatch(html, /开始测试|人格分析|生成报告/);
   assert.doesNotMatch(html, /Question\s*1|问题\s*1\s*\/\s*9/i);
 });

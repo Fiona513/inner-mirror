@@ -3,10 +3,10 @@ import { LivingModelProvider } from "../living-model/LivingModelProvider";
 import { LocaleProvider } from "../locale/locale";
 
 export const metadata: Metadata = {
-  title: "内在镜像｜持续生长的自我理解",
-  description: "一个由你掌握的自我探索体验。查看依据、提出质疑、改写并修订你选择保留的理解。",
-  openGraph: { title: "内在镜像｜持续生长的自我理解", description: "每一条解释都可以由你检查与修订。", images: [] },
-  twitter: { card: "summary", title: "内在镜像｜持续生长的自我理解", description: "每一条解释都可以由你检查与修订。", images: [] },
+  title: "Inner Mirror",
+  description: "An evidence-backed, user-owned living self model. Inspect, challenge, rewrite, and revise the understandings you choose to keep.",
+  openGraph: { title: "Inner Mirror", description: "Evidence-backed reflection where you own every interpretation.", images: [] },
+  twitter: { card: "summary", title: "Inner Mirror", description: "Evidence-backed reflection where you own every interpretation.", images: [] },
 };
 
 export default function LivingRoutesLayout({ children }: { children: React.ReactNode }) {

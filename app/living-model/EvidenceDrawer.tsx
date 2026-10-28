@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useLocale } from "../locale/locale";
+import { getLivingCopy, labelEnum, localizeSystemText } from "../locale/living";
 import styles from "./LivingModel.module.css";
-import { useCopy } from "../locale/locale";
-import { useSampleText } from "../locale/sample-text";
 import { useLivingModel } from "./LivingModelProvider";
+import { localizeDemoText } from "./demo-data";
 
 export function EvidenceDrawer({ evidenceIds, hypothesis, onClose }: { evidenceIds: string[]; hypothesis: string; onClose: () => void }) {
   const { state } = useLivingModel();
-  const copy = useCopy();
-  const sampleText = useSampleText();
+  const { locale } = useLocale();
+  const copy = getLivingCopy(locale);
+  const d = (value: string) => localizeSystemText(state.sampleDataLoaded ? localizeDemoText(value, locale) : value, locale);
   const closeRef = useRef<HTMLButtonElement>(null);
   const evidence = state.evidence.filter((item) => evidenceIds.includes(item.id) && !item.forgotten);
   const supporting = evidence.filter((item) => item.relationship === "supporting");
@@ -24,19 +26,19 @@ export function EvidenceDrawer({ evidenceIds, hypothesis, onClose }: { evidenceI
 
   return (
     <div className={styles.drawerBackdrop}>
-      <button className={styles.drawerScrim} type="button" onClick={onClose} aria-label={copy("关闭证据面板", "Close evidence drawer")} />
+      <button className={styles.drawerScrim} type="button" onClick={onClose} aria-label={copy.evidence.closeDrawer} />
       <aside className={styles.drawer} role="dialog" aria-modal="true" aria-labelledby="evidence-drawer-title">
         <header className={styles.drawerHeader}>
-          <div><p className={styles.sectionLabel}>{copy("依据", "Evidence")}</p><h2 id="evidence-drawer-title">{copy("我为什么注意到这一点", "Why I noticed this")}</h2></div>
-          <button ref={closeRef} type="button" className={styles.iconButton} onClick={onClose} aria-label={copy("关闭依据", "Close evidence")}>×</button>
+          <div><p className={styles.sectionLabel}>{copy.evidence.eyebrow}</p><h2 id="evidence-drawer-title">{copy.evidence.title}</h2></div>
+          <button ref={closeRef} type="button" className={styles.iconButton} onClick={onClose} aria-label={copy.evidence.close}>×</button>
         </header>
         <div className={styles.drawerBody}>
-          <EvidenceGroup title={copy("支持它的线索", "Signals that support it")} items={supporting} />
-          <EvidenceGroup title={copy("让它变复杂的线索", "Signals that complicate it")} items={counter} counter />
+          <EvidenceGroup title={copy.evidence.supporting} items={supporting} />
+          <EvidenceGroup title={copy.evidence.counter} items={counter} counter />
           <section className={styles.hypothesisNote}>
-            <p className={styles.sectionLabel}>{copy("当前假设", "My current hypothesis")}</p>
-            <p>{sampleText(hypothesis)}</p>
-            <small>{copy("这是一种解释，不是事实。你可以编辑或拒绝它。", "This is an interpretation, not a fact. You can edit or reject it.")}</small>
+            <p className={styles.sectionLabel}>{copy.evidence.hypothesis}</p>
+            <p>{d(hypothesis)}</p>
+            <small>{copy.evidence.note}</small>
           </section>
         </div>
       </aside>
@@ -45,16 +47,18 @@ export function EvidenceDrawer({ evidenceIds, hypothesis, onClose }: { evidenceI
 }
 
 function EvidenceGroup({ title, items, counter = false }: { title: string; items: ReturnType<typeof useLivingModel>["state"]["evidence"]; counter?: boolean }) {
-  const copy = useCopy();
-  const sampleText = useSampleText();
+  const { locale } = useLocale();
+  const { state } = useLivingModel();
+  const copy = getLivingCopy(locale);
+  const d = (value: string) => localizeSystemText(state.sampleDataLoaded ? localizeDemoText(value, locale) : value, locale);
   return (
     <section className={styles.evidenceGroup}>
       <div className={styles.evidenceGroupTitle}><h3>{title}</h3><span>{items.length}</span></div>
       {items.length ? items.map((item) => <article className={`${styles.evidenceItem} ${counter ? styles.counterEvidence : ""}`} key={item.id}>
-        <span>{sampleText(item.context)}</span>
-        <p>{sampleText(item.excerpt)}</p>
-        <small>{copy(item.sourceType === "reflection" ? "反思" : item.sourceType === "observation" ? "观察" : "事实", item.sourceType.replaceAll("_", " "))}</small>
-      </article>) : <p className={styles.emptyLine}>{copy("这里还没有保留的线索。", "No retained signal is available here yet.")}</p>}
+        <span>{d(item.context)}</span>
+        <p>{d(item.excerpt)}</p>
+        <small>{labelEnum(locale, item.sourceType)}</small>
+      </article>) : <p className={styles.emptyLine}>{copy.evidence.empty}</p>}
     </section>
   );
 }
