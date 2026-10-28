@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { EvidenceDrawer } from "./EvidenceDrawer";
 import { LivingShell, PageHeader } from "./LivingShell";
 import styles from "./LivingModel.module.css";
@@ -46,7 +45,7 @@ export default function MirrorPage() {
         {!visible.length ? <div className={styles.mirrorFilterEmpty}>{zh ? "这个分类中还没有保留的理解。" : "No retained understanding is in this category yet."}</div> : null}
       </section>
       {selected ? <MirrorDetail insight={selected} onEvidence={() => setDrawer(true)} mode={editMode} setMode={setEditMode} /> : null}
-    </div> : <section className={styles.emptyState}><p className={styles.eyebrow}>{t("nav.mirror")}</p><h1>{t("mirror.emptyTitle")}</h1><p>{t("mirror.emptyBody")}</p><Link prefetch={false} className={styles.primaryLink} href="/reflection">{t("reflection.startCta")}</Link></section>}
+    </div> : <section className={styles.emptyState}><p className={styles.eyebrow}>{t("nav.mirror")}</p><h1>{t("mirror.emptyTitle")}</h1><p>{t("mirror.emptyBody")}</p><button type="button" className={styles.primaryLink} onClick={() => window.location.assign("/reflection")}>{t("reflection.startCta")}</button></section>}
   </div>{drawer && selected ? <EvidenceDrawer evidenceIds={selected.evidenceIds} hypothesis={selected.statement} onClose={() => setDrawer(false)} /> : null}</LivingShell>;
 
   function MirrorDetail({ insight, onEvidence, mode, setMode }: { insight: Insight; onEvidence: () => void; mode: typeof editMode; setMode: (mode: typeof editMode) => void }) {
@@ -75,3 +74,4 @@ export default function MirrorPage() {
 }
 
 function DetailList({ title, items, empty }: { title: string; items: string[]; empty: string }) { return <section className={styles.detailList}><h3>{title}</h3>{items.length ? <ul>{items.map((item) => <li key={item}>{item}</li>)}</ul> : <p>{empty}</p>}</section>; }
+
