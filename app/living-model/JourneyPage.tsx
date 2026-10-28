@@ -1,7 +1,6 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
 import type { CSSProperties } from "react";
 import { LivingShell, PageHeader } from "./LivingShell";
 import styles from "./LivingModel.module.css";
@@ -30,7 +29,7 @@ export default function JourneyPage() {
     {events.length || state.stateSnapshots.length ? <>
       <DualTrack state={state} events={events} />
       {events.length ? <details className={styles.fullHistory}><summary>{zh ? "完整修订历史 · 最新在前" : "Full revision history · newest first"}</summary><RevisionTimeline state={state} events={events} /></details> : null}
-    </> : <section className={styles.emptyState}><p className={styles.eyebrow}>{t("nav.journey")}</p><h1>{t("journey.emptyTitle")}</h1><p>{t("journey.emptyBody")}</p><Link prefetch={false} className={styles.primaryLink} href="/reflection">{t("reflection.startCta")}</Link></section>}
+    </> : <section className={styles.emptyState}><p className={styles.eyebrow}>{t("nav.journey")}</p><h1>{t("journey.emptyTitle")}</h1><p>{t("journey.emptyBody")}</p><button type="button" className={styles.primaryLink} onClick={() => window.location.assign("/reflection")}>{t("reflection.startCta")}</button></section>}
   </div></LivingShell>;
 }
 
@@ -55,3 +54,4 @@ function RevisionTimeline({ state, events }: { state: LivingModelState; events: 
   const d = (value: string) => localizeSystemText(state.sampleDataLoaded ? localizeDemoText(value, locale) : value, locale);
   return <section className={styles.journeyTimeline}>{events.map((item, index) => { const versions = item.insightId ? state.versions.filter((version) => version.insightId === item.insightId).sort((a,b) => a.versionNumber-b.versionNumber) : []; return <article key={item.id} className={styles.journeyEvent}><div className={styles.journeyMarker}><span>{String(index + 1).padStart(2,"0")}</span></div><div className={styles.journeyContent}><div className={styles.journeyMeta}><span>{labelEnum(locale, item.type)}</span><time>{formatLivingDate(locale, item.createdAt, { month: "short", day: "numeric", year: "numeric" })}</time></div><h2>{sampleOnly && !zh ? d(item.title).replace(/^You /, "Sample person ") : d(item.title)}</h2><p>{d(item.summary)}</p>{item.previousStatement || item.currentStatement ? <div className={styles.versionChange}>{item.previousStatement ? <div><span>{zh ? "之前" : "Before"}</span><p>{d(item.previousStatement)}</p></div> : null}{item.currentStatement ? <div><span>{zh ? "之后" : "After"}</span><p>{d(item.currentStatement)}</p></div> : null}</div> : null}{versions.length > 1 && index === 0 ? <div className={styles.versionSequence}><p className={styles.sectionLabel}>{zh ? "版本历史 · 从最早到现在" : "Version history · earliest to current"}</p>{versions.map((version) => <div key={version.id}><span>V{version.versionNumber}</span><p>{d(version.statement)}</p><small>{version.changedBy === "user" ? sampleOnly ? (zh ? "示例人物修改" : "Sample person changed this") : (zh ? "你修改了它" : "You changed this") : (zh ? "AI 提议" : "AI proposed")}</small></div>)}</div> : null}</div></article>; })}</section>;
 }
+
