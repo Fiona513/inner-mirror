@@ -135,8 +135,8 @@ export const zhCN = {
     categoryTensions: "内在的拉扯",
     categoryBoundaries: "边界",
     categoryDirections: "方向",
-    emptyTitle: "你的镜像仍在成形。",
-    emptyBody: "它有意从不完整开始。当模式逐渐清晰，再由你决定把哪些理解留在这里。",
+    emptyTitle: "这里不用急着有答案。",
+    emptyBody: "如果最近有什么压在心里，你可以只说一小句。我们先陪它待一会儿，不急着定义你。",
   },
   journey: {
     titlePersonal: "你的旅程",
@@ -147,7 +147,7 @@ export const zhCN = {
     emptyBody: "当你理解自己的方式发生变化时，这个空间会替你记住这份不同。",
   },
   reflection: {
-    startCta: "开始一次反思",
+    startCta: "从此刻想说的一句开始 →",
   },
 };
 
@@ -272,8 +272,8 @@ export const en: Messages = {
     categoryTensions: "Tensions",
     categoryBoundaries: "Boundaries",
     categoryDirections: "Directions",
-    emptyTitle: "Your mirror is still forming.",
-    emptyBody: "It starts incomplete on purpose. As patterns become clearer, you decide what belongs here.",
+    emptyTitle: "You do not need an answer yet.",
+    emptyBody: "If something has been sitting heavily with you, one small sentence is enough. We can stay with it before trying to define you.",
   },
   journey: {
     titlePersonal: "Your Journey",
@@ -284,7 +284,7 @@ export const en: Messages = {
     emptyBody: "When the way you understand yourself shifts, this space will remember the difference.",
   },
   reflection: {
-    startCta: "Start a reflection",
+    startCta: "Begin with one thing on your mind →",
   },
 };
 
@@ -303,3 +303,4 @@ type LeafKeys<T> = {
       ? `${K}.${LeafKeys<T[K]>}`
       : never;
 }[Extract<keyof T, string>];
+
