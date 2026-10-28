@@ -345,7 +345,20 @@ test("Now, Mirror and Journey expose visual evidence through progressive, linked
 test("internal navigation disables unstable RSC prefetch while preserving destinations", async () => {
   const files = await Promise.all(["JourneyPage.tsx", "MirrorPage.tsx", "SearchPage.tsx"].map((name) => readFile(new URL(`../app/living-model/${name}`, import.meta.url), "utf8")));
   assert.equal(files.every((source) => !source.includes("<Link ") || source.includes("prefetch={false}")), true);
-  assert.ok(files.some((source) => source.includes('href="/reflection"')));
+  assert.ok(files.some((source) => source.includes('window.location.assign("/reflection")')));
+});
+
+test("empty Mirror and Journey offer a gentle, reliable reflection entry", async () => {
+  const [mirror, journey, messages] = await Promise.all([
+    readFile(new URL("../app/living-model/MirrorPage.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/living-model/JourneyPage.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/locale/messages.ts", import.meta.url), "utf8"),
+  ]);
+  assert.match(mirror, /window\.location\.assign\("\/reflection"\)/);
+  assert.match(journey, /window\.location\.assign\("\/reflection"\)/);
+  assert.doesNotMatch(`${mirror}${journey}`, /from\s+["']next\/link["']/);
+  assert.match(messages, /从此刻想说的一句开始/);
+  assert.doesNotMatch(messages, /开始第一次反思/);
 });
 
 test("safety language pauses interpretation", () => {
@@ -416,3 +429,4 @@ test("the controlled Agent endpoint receives and enforces the selected response 
   assert.match(endpoint, /Simplified Chinese/);
   assert.match(endpoint, /exclusively/);
 });
+
